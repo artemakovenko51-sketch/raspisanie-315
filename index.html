@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>С-315 · Расписание занятий</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --parchment: #0A1622;
+    --parchment-2: #10202F;
+    --ink: #E9E2D0;
+    --ink-soft: #A9B6BE;
+    --navy: #0C1A28;
+    --navy-2: #071119;
+    --brass: #D98A4A;
+    --brass-soft: #7A4A22;
+    --line: #26384A;
+    --rest: #55666B;
+    --card-bg: var(--parchment-2);
+    --page-bg: var(--parchment);
+    --accent: #D98A4A;
+    --header-fg: #F3D9B8;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--page-bg);
+    color: var(--ink);
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  .page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+
+  /* ---------- Week switcher ---------- */
+
+  .switcher {
+    display: flex;
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 26px;
+    gap: 4px;
+  }
+
+  .switcher button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    padding: 11px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .switcher button.active {
+    background: var(--navy);
+    color: var(--header-fg);
+  }
+
+  /* ---------- Day sections ---------- */
+
+  .day {
+    margin-bottom: 30px;
+  }
+
+  .day-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .day-title h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.35rem;
+    margin: 0;
+    color: #FFFFFF;
+  }
+
+  .day-title .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .slot {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .slot:last-child { border-bottom: none; }
+
+  .slot .time {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    padding-top: 2px;
+    line-height: 1.35;
+  }
+
+  .slot .time .pair {
+    display: block;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--accent);
+    margin-bottom: 2px;
+  }
+
+  .slot .subject {
+    font-size: 0.96rem;
+    color: var(--ink);
+  }
+
+  .slot .subject .room {
+    color: var(--ink-soft);
+    font-size: 0.87rem;
+  }
+
+  .slot.rest .subject {
+    color: var(--rest);
+    font-style: italic;
+  }
+
+  .transfer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    margin: 2px 0;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  .transfer::before {
+    content: "⛵";
+    font-style: normal;
+    font-size: 0.85rem;
+  }
+
+  .transfer .rule {
+    flex: 1;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 11px);
+  }
+
+  /* ---------- Footer ---------- */
+
+  footer {
+    margin-top: 36px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  .legend {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 18px;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin-bottom: 22px;
+  }
+
+  .legend div b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .signature {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+  }
+
+  .signature b {
+    font-style: normal;
+    color: var(--navy);
+    font-weight: 600;
+  }
+
+  .signature b { color: var(--brass); }
+
+  @media (max-width: 400px) {
+    .masthead h1 { font-size: 2.15rem; }
+    .slot { grid-template-columns: 58px 1fr; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="switcher" role="tablist">
+    <button id="btn-odd" class="active" onclick="showWeek('odd')">Нечётная неделя</button>
+    <button id="btn-even" onclick="showWeek('even')">Чётная неделя</button>
+  </div>
+
+  <div id="schedule"></div>
+
+  <footer>
+    <div class="legend">
+      <div><b>А</b> — Заневский пр., д. 5, корп. А</div>
+      <div><b>Б</b> — Заневский пр., д. 5, корп. Б</div>
+      <div><b>М</b> — Межевой канал, д. 6</div>
+      <div><b>Д</b> — Двинская, д. 5/7</div>
+    </div>
+    <p class="signature">Заместитель декана факультета Навигации и связи по учебной работе — <b>Бутин Н.Ю.</b></p>
+  </footer>
+
+</div>
+
+<script>
+const REST = "Самостоятельная работа";
+
+const days = [
+  { name: "Понедельник", items: [
+    { pair: "I",  time: "09:00–10:35", odd: REST, even: "Иностранный язык, практика — Степина С.С. · ауд. 332 (Б)" },
+    { pair: "II", time: "10:45–12:20", both: "Теория и устройство судна, лекция — Березкин С.М. · ауд. 316 (А)" },
+    { transfer: true },
+    { pair: "III",time: "15:00–16:35", odd: REST, even: "Курс подготовки экипажей гражданских судов, лекция — Богословский В.А. · ауд. 106 (М)" },
+    { pair: "IV", time: "16:45–18:20", odd: "Курс подготовки экипажей гражданских судов, практика — Богословский В.А. · ауд. 106 (М)", even: REST }
+  ]},
+  { name: "Вторник", items: [
+    { pair: "I",  time: "09:00–10:35", odd: "Навигация и лоция, лекция — Сличёнок М.Ю. · ауд. 201 (А)", even: "Метрология, стандартизация и сертификация на водном транспорте, практика — Сигида В.И. · ауд. 114 (А)" },
+    { pair: "II", time: "10:45–12:20", odd: "Навигация и лоция, практика — Сличёнок М.Ю. · ауд. 218 (А)", even: "Теория и устройство судна, практика — Развозова Е.В. · ауд. 315 (А)" },
+    { transfer: true },
+    { pair: "III",time: "15:00–16:35", both: REST },
+    { pair: "IV", time: "16:45–18:20", odd: REST, even: "Безопасность жизнедеятельности, практика — Ильин Г.В. · ауд. 214 (М)" }
+  ]},
+  { name: "Среда", items: [
+    { pair: "I",  time: "09:00–10:35", both: "Математические основы судовождения, практика — Земов П.В. · ауд. 325 (Б)" },
+    { pair: "II", time: "10:45–12:20", odd: "Общая лоция на ВВП, практика — Ефимов К.П. · ауд. 242 (Б)", even: "Иностранный язык, практика — Аболмазова Ю.В. · ауд. 328 (Б)" },
+    { transfer: true },
+    { pair: "III",time: "15:00–16:35", odd: "Международные морские конвенции, лекция — Кузьмин В.Е. · ауд. 106 (М)", even: "Лидерство и основы управления судовым экипажем, практика — Осипова Л.В. · ауд. 214 (М)" },
+    { pair: "IV", time: "16:45–18:20", odd: "Безопасность жизнедеятельности, лекция — Ильин Г.В. · ауд. 106 (М)", even: "Математические основы судовождения, лекция — Земов П.В. · ауд. 106 (М)" }
+  ]},
+  { name: "Четверг", items: [
+    { pair: "I",  time: "09:00–10:35", both: "Лидерство и основы управления судовым экипажем, лекция — Осипова Л.В. · ауд. 507 (Б)" },
+    { pair: "II", time: "10:45–12:20", both: "Метрология, стандартизация и сертификация на водном транспорте, лекция — Сигида В.И. · ауд. 114 (А)" },
+    { transfer: true },
+    { pair: "III",time: "15:00–16:35", both: "Общая лоция на ВВП, лекция — Ефимов К.П. · ауд. 540 (Д)" },
+    { pair: "IV", time: "16:45–18:20", odd: "Гидрометеорологическое обеспечение судовождения, лекция — Бояринов А.М. · ауд. 106 (М)", even: "Международные морские конвенции, практика — Кузьмин В.Е. · ауд. 214 (М)" }
+  ]},
+  { name: "Пятница", items: [
+    { pair: "I",  time: "09:00–10:35", both: "Иностранный язык, практика — Аболмазова Ю.В., Степина С.С. · ауд. 328 (Б), 332 (Б)" },
+    { pair: "II", time: "10:45–12:20", both: "Судовая деловая переписка, практика — Лисовец О.Т. · ауд. 236 (Б)" },
+    { transfer: true },
+    { pair: "III",time: "15:00–16:35", odd: "Гидрометеорологическое обеспечение судовождения, практика — Бояринов А.М. · ауд. 106 (М)", even: REST },
+    { pair: "IV", time: "16:45–18:20", both: REST }
+  ]},
+  { name: "Суббота", items: [
+    { pair: "I",  time: "09:00–10:35", both: REST },
+    { pair: "II", time: "10:45–12:20", both: "Гидрометеорологическое обеспечение судовождения, практика — Бояринов А.М. · ауд. 214 (М)" },
+    { pair: "III",time: "13:15–14:50", odd: "Международные морские конвенции, практика — Кузьмин В.Е. · ауд. 214 (М)", even: REST },
+    { pair: "IV", time: "15:00–16:35", both: REST }
+  ]}
+];
+
+function subjectHTML(text) {
+  if (text === REST) return text;
+  const parts = text.split(" · ");
+  if (parts.length === 2) {
+    return parts[0] + '<br><span class="room">' + parts[1] + '</span>';
+  }
+  return text;
+}
+
+function render(week) {
+  const root = document.getElementById('schedule');
+  root.innerHTML = '';
+  days.forEach(day => {
+    const dayEl = document.createElement('div');
+    dayEl.className = 'day';
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'day-title';
+    titleEl.innerHTML = '<h2>' + day.name + '</h2><div class="rule"></div>';
+    dayEl.appendChild(titleEl);
+
+    day.items.forEach(item => {
+      if (item.transfer) {
+        const t = document.createElement('div');
+        t.className = 'transfer';
+        t.innerHTML = 'Переезд на Межевой д. 6<div class="rule"></div>';
+        dayEl.appendChild(t);
+        return;
+      }
+      const subject = item.both ? item.both : item[week];
+      const slot = document.createElement('div');
+      slot.className = 'slot' + (subject === REST ? ' rest' : '');
+      slot.innerHTML =
+        '<div class="time"><span class="pair">' + item.pair + '</span>' + item.time + '</div>' +
+        '<div class="subject">' + subjectHTML(subject) + '</div>';
+      dayEl.appendChild(slot);
+    });
+
+    root.appendChild(dayEl);
+  });
+}
+
+function showWeek(week) {
+  document.getElementById('btn-odd').classList.toggle('active', week === 'odd');
+  document.getElementById('btn-even').classList.toggle('active', week === 'even');
+  render(week);
+  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+    window.Telegram.WebApp.HapticFeedback.selectionChanged();
+  }
+}
+
+showWeek('odd');
+
+// --- Telegram Mini App integration ---
+(function () {
+  var tg = window.Telegram && window.Telegram.WebApp;
+  if (!tg) return; // running outside Telegram (e.g. plain browser preview) — page still works fine
+
+  tg.ready();
+  tg.expand();
+
+  // Keep our own dark nautical palette regardless of the user's Telegram theme,
+  // but let the native header/background bars match it for a seamless look.
+  try {
+    tg.setHeaderColor('#0A1622');
+    tg.setBackgroundColor('#0A1622');
+  } catch (e) { /* older Telegram client without these methods */ }
+
+  // Avoid accidental app close when the user scrolls/swipes inside the page.
+  if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+
+  // Respect the device's safe area / Telegram's own inset reporting when available.
+  function applyInsets() {
+    var inset = tg.contentSafeAreaInset || tg.safeAreaInset;
+    if (inset) {
+      document.body.style.paddingTop = 'max(env(safe-area-inset-top, 0px), ' + (inset.top || 0) + 'px)';
+      document.body.style.paddingBottom = 'max(env(safe-area-inset-bottom, 0px), ' + (inset.bottom || 0) + 'px)';
+    }
+  }
+  applyInsets();
+  tg.onEvent('viewportChanged', applyInsets);
+})();
+</script>
+</body>
+</html>
